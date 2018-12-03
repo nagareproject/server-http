@@ -21,7 +21,7 @@ def default_handler(exception, exceptions_service, **context):
     return exception
 
 
-class Handler(base_exceptions_handler.Handler):
+class ExceptionService(base_exceptions_handler.Handler):
     LOAD_PRIORITY = base_exceptions_handler.Handler.LOAD_PRIORITY + 2
     CONFIG_SPEC = dict(
         base_exceptions_handler.Handler.CONFIG_SPEC,

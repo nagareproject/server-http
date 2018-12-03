@@ -38,6 +38,13 @@ class Response(webob.Response):
 # ---------------------------------------------------------------------------
 
 
+def livereload(reloader, dirname, filename, url):
+    if filename.endswith(('.css', '.js', '.gif', '.png', '.jpeg', '.jpg')):
+        reloader.reload_asset(url + '/' + filename)
+
+# ---------------------------------------------------------------------------
+
+
 class App(application.App):
     """Application to handle a HTTP request"""
 
@@ -48,16 +55,26 @@ class App(application.App):
         static='string(default="$static_path")'
     )
 
-    def __init__(self, name, dist, url, static_url, static, statics_service=None, **config):
+    def __init__(
+        self,
+        name, dist,
+        url, static_url, static,
+        services_service, statics_service=None, reloader_service=None,
+        **config
+    ):
         """Initialization
 
         In:
           - ``services_service`` -- the services repository
         """
-        super(App, self).__init__(name, dist, **config)
+        services_service(super(App, self).__init__, name, dist, **config)
 
         if url is None:
             url = name
+
+        self.url = url.rstrip('/')
+        self.static_url = static_url.rstrip('/')
+        self.static_path = static.rstrip('/')
 
         if statics_service is not None:
             statics_service.register(url)
@@ -71,9 +88,8 @@ class App(application.App):
             if static:
                 raise ValueError('"statics" service must be installed to serve static contents on the url "%s"' % static)
 
-        self.url = url.rstrip('/')
-        self.static_url = static_url.rstrip('/')
-        self.static_path = static.rstrip('/')
+        if reloader_service is not None:
+            reloader_service.watch_dir(self.static_path, livereload, recursive=True, url=self.static_url)
 
     @staticmethod
     def create_request(environ, *args, **kw):

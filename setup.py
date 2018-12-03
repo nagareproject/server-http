@@ -33,6 +33,6 @@ setup(
     install_requires=['WebOb', 'nagare-services', 'nagare-server'],
     entry_points='''
         [nagare.services]
-        exceptions = nagare.services.http_exceptions_handler:Handler
+        exceptions = nagare.services.http_exceptions:ExceptionService
     '''
 )
