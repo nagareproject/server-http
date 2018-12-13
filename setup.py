@@ -32,7 +32,8 @@ setup(
     use_scm_version=True,
     install_requires=[
         'WebOb', 'ws4py',
-        'nagare-services', 'nagare-server'
+        'nagare-services', 'nagare-services-statics', 'nagare-services-router',
+        'nagare-server'
     ],
     entry_points='''
         [nagare.services]

@@ -25,5 +25,5 @@ class ExceptionService(base_exceptions_handler.Handler):
     LOAD_PRIORITY = base_exceptions_handler.Handler.LOAD_PRIORITY + 2
     CONFIG_SPEC = dict(
         base_exceptions_handler.Handler.CONFIG_SPEC,
-        handler='string(default="nagare.services.http_exceptions_handler:default_handler")'
+        handler='string(default="nagare.services.http_exceptions:default_handler")'
     )

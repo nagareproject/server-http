@@ -32,18 +32,6 @@ class Request(webob.Request):
 class Response(webob.Response):
     default_content_type = ''
 
-    # def start_response(self, start_response):
-    #    start_response(self.status, self.headerlist)(self.body)
-
-# ---------------------------------------------------------------------------
-
-
-def livereload(reloader, dirname, filename, url):
-    if filename.endswith(('.css', '.js', '.gif', '.png', '.jpeg', '.jpg')):
-        reloader.reload_asset(url + '/' + filename)
-
-# ---------------------------------------------------------------------------
-
 
 class App(application.App):
     """Application to handle a HTTP request"""
@@ -51,15 +39,13 @@ class App(application.App):
     CONFIG_SPEC = dict(
         application.App.CONFIG_SPEC,
         url='string(default=None)',
-        static_url='string(default="/static")',
-        static='string(default="$static_path")'
     )
 
     def __init__(
         self,
         name, dist,
-        url, static_url, static,
-        services_service, statics_service=None, reloader_service=None,
+        url,
+        statics_service, services_service,
         **config
     ):
         """Initialization
@@ -69,27 +55,8 @@ class App(application.App):
         """
         services_service(super(App, self).__init__, name, dist, **config)
 
-        if url is None:
-            url = name
-
-        self.url = url.rstrip('/')
-        self.static_url = static_url.rstrip('/')
-        self.static_path = static.rstrip('/')
-
-        if statics_service is not None:
-            statics_service.register(url)
-
-            if static:
-                statics_service.register(static_url, static)
-        else:
-            if url:
-                raise ValueError('"statics" service must be installed to serve on the url "%s"' % url)
-
-            if static:
-                raise ValueError('"statics" service must be installed to serve static contents on the url "%s"' % static)
-
-        if reloader_service is not None:
-            reloader_service.watch_dir(self.static_path, livereload, recursive=True, url=self.static_url)
+        self.url = (url if url is not None else name).rstrip('/')
+        statics_service.register(self.url)
 
     @staticmethod
     def create_request(environ, *args, **kw):
@@ -123,12 +90,15 @@ class App(application.App):
 
 class RESTApp(App):
 
-    CONFIG_SPEC = dict(App.CONFIG_SPEC, json='boolean(default=True)')
+    CONFIG_SPEC = dict(
+        App.CONFIG_SPEC,
+        default_content_type='string(default="application/json")'
+    )
 
-    def __init__(self, name, dist, json, router_service, services_service, **config):
+    def __init__(self, name, dist, default_content_type, router_service, services_service, **config):
         services_service(super(RESTApp, self).__init__, name, dist, **config)
 
-        self.json = json
+        self.default_content_type = default_content_type
         self.router = router_service
 
     def route(self, args):
@@ -137,16 +107,22 @@ class RESTApp(App):
 
         return args
 
-    def handle_request(self, chain, request, response, **params):
-        args = self.router.create_dispatch_args(request, response, **params)
-        data = self.route((self,) + args) or ''
+    def create_dispatch_args(self, **params):
+        return (self,) + self.router.create_dispatch_args(**params)
 
+    def set_body(self, response, body):
         if not response.content_type:
-            response.content_type = 'application/json' if self.json else 'application/octet-stream'
+            response.content_type = self.default_content_type or 'application/octet-stream'
 
         if response.content_type == 'application/json':
-            response.json_body = data
+            response.json_body = body or ''
         else:
-            response.body = data
+            response.body = body or ''
 
         return response
+
+    def handle_request(self, chain, response, **params):
+        args = self.create_dispatch_args(response=response, **params)
+        data = self.route(args)
+
+        return self.set_body(response, data)
