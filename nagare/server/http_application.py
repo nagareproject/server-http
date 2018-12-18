@@ -12,7 +12,7 @@
 import webob
 from webob import exc
 
-from nagare.server import application
+from nagare.server import base_application
 
 
 class Request(webob.Request):
@@ -33,11 +33,11 @@ class Response(webob.Response):
     default_content_type = ''
 
 
-class App(application.App):
+class App(base_application.App):
     """Application to handle a HTTP request"""
 
     CONFIG_SPEC = dict(
-        application.App.CONFIG_SPEC,
+        base_application.App.CONFIG_SPEC,
         url='string(default=None)',
     )
 
