@@ -56,7 +56,7 @@ class App(base_application.App):
         services_service(super(App, self).__init__, name, dist, **config)
 
         self.url = (url if url is not None else name).rstrip('/')
-        statics_service.register(self.url)
+        self.statics_service = statics_service
 
     @staticmethod
     def create_request(environ, *args, **kw):
@@ -81,6 +81,10 @@ class App(base_application.App):
           - a ``WebOb`` Response object
         """
         return Response(*args, **kw)
+
+    def handle_start(self):
+        super(App, self).handle_start()
+        self.statics_service.register(self.url)
 
     def handle_request(self, chain, request, response, **params):
         return response

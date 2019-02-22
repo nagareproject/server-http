@@ -7,7 +7,7 @@
 # this distribution.
 # --
 
-from functools import partial
+import webbrowser
 
 from webob import exc
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
@@ -16,13 +16,33 @@ from nagare.server import publisher
 
 
 class Publisher(publisher.Publisher):
+    CONFIG_SPEC = dict(
+        publisher.Publisher.CONFIG_SPEC,
+        _app_url='string(default=$app_url)',
+        open_on_start='boolean(default=True, help="open a browser tab on startup")'
+    )
 
-    def _create_app(self, services_service):
-        app = services_service(self.create_app)
-        return partial(self.start_handle_request, app)
+    def __init__(self, name, dist, _app_url, open_on_start, **config):
+        super(Publisher, self).__init__(name, dist, **config)
+
+        self.open_on_start = open_on_start
+        self.url = _app_url or self.app_name
+
+    def launch_browser(self):
+        is_url, endpoint = self.endpoint
+        if self.open_on_start and is_url:
+            webbrowser.open(endpoint + '/' + self.url)
+
+    def generate_banner(self):
+        url = self.endpoint[1] + '/' + self.url
+        return super(Publisher, self).generate_banner() + ' on ' + url
 
     def create_websocket(self, environ):
         raise NotImplementedError()
+
+    def _serve(self, app, **params):
+        super(Publisher, self)._serve(app, **params)
+        self.launch_browser()
 
     def start_handle_request(self, app, environ, start_response):
         websocket = self.create_websocket(environ)
