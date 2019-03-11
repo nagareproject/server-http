@@ -7,6 +7,9 @@
 # this distribution.
 # --
 
+import os
+import webbrowser
+
 from webob import exc
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
@@ -16,12 +19,19 @@ from nagare.server import publisher
 class Publisher(publisher.Publisher):
     CONFIG_SPEC = dict(
         publisher.Publisher.CONFIG_SPEC,
-        _app_url='string(default=$app_url)'
+        _app_url='string(default=$app_url)',
+        open_on_start='boolean(default=True, help="open a browser tab on startup")'
     )
 
-    def __init__(self, name, dist, _app_url, **config):
+    def __init__(self, name, dist, _app_url, open_on_start, **config):
         super(Publisher, self).__init__(name, dist, **config)
         self.url = _app_url or self.app_name
+        self.open_on_start = open_on_start
+
+    def launch_browser(self):
+        is_url, endpoint = self.endpoint
+        if self.open_on_start and is_url and (os.environ.get('nagare.reload', '1') == '1'):
+            webbrowser.open(endpoint + '/' + self.url)
 
     def generate_banner(self):
         url = self.endpoint[1] + '/' + self.url
@@ -64,3 +74,8 @@ class Publisher(publisher.Publisher):
                 response = exc.HTTPInternalServerError()
 
         return response(environ, start_response)
+
+    def _serve(self, app, **params):
+        self.launch_browser()
+
+        super(Publisher, self)._serve(app, **params)
