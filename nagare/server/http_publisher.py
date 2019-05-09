@@ -25,7 +25,7 @@ class Publisher(publisher.Publisher):
 
     def __init__(self, name, dist, _app_url, open_on_start, **config):
         super(Publisher, self).__init__(name, dist, **config)
-        self.url = _app_url or self.app_name
+        self.url = _app_url
         self.open_on_start = open_on_start
 
     def launch_browser(self):
