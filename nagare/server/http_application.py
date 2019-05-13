@@ -41,22 +41,9 @@ class App(base_application.App):
         url='string(default=None)',
     )
 
-    def __init__(
-        self,
-        name, dist,
-        url,
-        statics_service, services_service,
-        **config
-    ):
-        """Initialization
-
-        In:
-          - ``services_service`` -- the services repository
-        """
+    def __init__(self, name, dist, url, services_service, **config):
         services_service(super(App, self).__init__, name, dist, **config)
-
         self.url = (url if url is not None else name).rstrip('/')
-        self.statics_service = statics_service
 
     @staticmethod
     def create_request(environ, *args, **kw):
@@ -82,9 +69,9 @@ class App(base_application.App):
         """
         return Response(*args, **kw)
 
-    def handle_start(self):
-        super(App, self).handle_start()
-        self.statics_service.register(self.url)
+    def handle_start(self, app, statics_service, services_service):
+        services_service(super(App, self).handle_start, app)
+        statics_service.register(self.url)
 
     def handle_request(self, chain, request, response, **params):
         return response
