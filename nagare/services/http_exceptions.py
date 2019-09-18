@@ -9,21 +9,56 @@
 # this distribution.
 # --
 
+from os import path
+
 from webob import exc
+from nagare.server import reference
 from nagare.services import base_exceptions_handler
 
 
-def default_handler(exception, exceptions_service, **context):
+def default_exception_handler(exception, exceptions_service, services_service, **context):
+    if isinstance(exception, exc.HTTPOk):
+        return exception
+
     if not isinstance(exception, exc.HTTPException):
         exceptions_service.log_exception()
         exception = exc.HTTPInternalServerError()
 
-    return exception
+    exception = services_service(exceptions_service.http_exception_handler, exception, **context)
+
+    if getattr(exception, 'commit_transaction', False):
+        return exception
+    else:
+        raise exception
 
 
-class ExceptionService(base_exceptions_handler.Handler):
-    LOAD_PRIORITY = base_exceptions_handler.Handler.LOAD_PRIORITY + 2
+def default_http_exception_handler(http_exception, exceptions_service, app, **context):
+    return exceptions_service.handle_http_exception(http_exception, app)
+
+
+class Exceptions(base_exceptions_handler.Exceptions):
+    LOAD_PRIORITY = base_exceptions_handler.Exceptions.LOAD_PRIORITY + 2
     CONFIG_SPEC = dict(
-        base_exceptions_handler.Handler.CONFIG_SPEC,
-        handler='string(default="nagare.services.http_exceptions:default_handler")'
+        base_exceptions_handler.Exceptions.CONFIG_SPEC,
+        exception_handler='string(default="nagare.services.http_exceptions:default_exception_handler")',
+        http_exception_handler='string(default="nagare.services.http_exceptions:default_http_exception_handler")'
     )
+
+    def __init__(self, name, dist, http_exception_handler, services_service, **config):
+        services_service(super(Exceptions, self).__init__, name, dist, **config)
+        self.http_exception_handler = reference.load_object(http_exception_handler)[0]
+
+    @staticmethod
+    def handle_http_exception(http_exception, app):
+        if app.data_path:
+            filename = path.join(app.data_path, 'http_errors', str(http_exception.status_code))
+            if not path.isfile(filename):
+                filename = path.join(app.data_path, 'http_errors', 'default')
+                if not path.isfile(filename):
+                    filename = None
+
+            if filename:
+                with open(filename) as f:
+                    http_exception.text = f.read()
+
+        return http_exception
