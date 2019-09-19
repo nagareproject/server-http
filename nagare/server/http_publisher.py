@@ -11,6 +11,7 @@ import os
 import webbrowser
 
 from webob import exc
+from ws4py.websocket import WebSocket
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
 from nagare.server import publisher
@@ -22,11 +23,17 @@ class Publisher(publisher.Publisher):
         _app_url='string(default=$app_url)',
         open_on_start='boolean(default=True, help="open a browser tab on startup")'
     )
+    websocket_app = WebSocketWSGIApplication
+    websocket_handler = WebSocket
 
     def __init__(self, name, dist, _app_url, open_on_start, **config):
         super(Publisher, self).__init__(name, dist, **config)
         self.url = _app_url
         self.open_on_start = open_on_start
+
+    @property
+    def endpoint(self):
+        return False, ''
 
     def launch_browser(self):
         is_url, endpoint = self.endpoint
@@ -42,7 +49,8 @@ class Publisher(publisher.Publisher):
 
     def start_handle_request(self, app, environ, start_response):
         websocket = self.create_websocket(environ)
-        environ.pop('set_websocket')(websocket, environ)
+        if websocket is not None:
+            environ.pop('set_websocket')(websocket, environ)
 
         request = app.create_request(environ)
 
@@ -65,8 +73,7 @@ class Publisher(publisher.Publisher):
                 )
 
                 if websocket is not None:
-                    environ['ws4py.socket'] = None
-                    response = WebSocketWSGIApplication(['binary'])
+                    response = self.websocket_app(['binary'], handler_cls=self.websocket_handler)
             except exc.HTTPException as e:
                 response = e
             except Exception:
