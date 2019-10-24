@@ -33,7 +33,10 @@ def default_exception_handler(exception, exceptions_service, services_service, *
 
 
 def default_http_exception_handler(http_exception, exceptions_service, app, **context):
-    return exceptions_service.handle_http_exception(http_exception, app)
+    if http_exception.status_code // 100 in (4, 5):
+        http_exception = exceptions_service.handle_http_exception(http_exception, str(http_exception.status_code), app)
+
+    return http_exception
 
 
 class Exceptions(base_exceptions_handler.Exceptions):
@@ -49,9 +52,9 @@ class Exceptions(base_exceptions_handler.Exceptions):
         self.http_exception_handler = reference.load_object(http_exception_handler)[0]
 
     @staticmethod
-    def handle_http_exception(http_exception, app):
+    def handle_http_exception(http_exception, filename, app):
         if app.data_path:
-            filename = path.join(app.data_path, 'http_errors', str(http_exception.status_code))
+            filename = path.join(app.data_path, 'http_errors', filename)
             if not path.isfile(filename):
                 filename = path.join(app.data_path, 'http_errors', 'default')
                 if not path.isfile(filename):
