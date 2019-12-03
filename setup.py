@@ -37,6 +37,6 @@ setup(
     ],
     entry_points='''
         [nagare.services]
-        exceptions = nagare.services.http_exceptions:Exceptions
+        exceptions = nagare.services.http_exceptions:ExceptionsService
     '''
 )

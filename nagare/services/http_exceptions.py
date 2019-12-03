@@ -39,16 +39,16 @@ def default_http_exception_handler(http_exception, exceptions_service, app, **co
     return http_exception
 
 
-class Exceptions(base_exceptions_handler.Exceptions):
-    LOAD_PRIORITY = base_exceptions_handler.Exceptions.LOAD_PRIORITY + 2
+class ExceptionsService(base_exceptions_handler.ExceptionsService):
+    LOAD_PRIORITY = base_exceptions_handler.ExceptionsService.LOAD_PRIORITY + 2
     CONFIG_SPEC = dict(
-        base_exceptions_handler.Exceptions.CONFIG_SPEC,
+        base_exceptions_handler.ExceptionsService.CONFIG_SPEC,
         exception_handler='string(default="nagare.services.http_exceptions:default_exception_handler")',
         http_exception_handler='string(default="nagare.services.http_exceptions:default_http_exception_handler")'
     )
 
     def __init__(self, name, dist, http_exception_handler, services_service, **config):
-        services_service(super(Exceptions, self).__init__, name, dist, **config)
+        services_service(super(ExceptionsService, self).__init__, name, dist, **config)
         self.http_exception_handler = reference.load_object(http_exception_handler)[0]
 
     @staticmethod
