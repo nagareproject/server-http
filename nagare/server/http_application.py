@@ -101,7 +101,7 @@ class RESTApp(App):
     def create_dispatch_args(self, **params):
         return (self,) + self.router.create_dispatch_args(**params)
 
-    def set_body(self, response, body):
+    def set_response_body(self, response, body):
         if not response.content_type:
             response.content_type = self.default_content_type or 'application/octet-stream'
 
@@ -116,4 +116,4 @@ class RESTApp(App):
         args = self.create_dispatch_args(response=response, **params)
         data = self.route(args)
 
-        return self.set_body(response, data)
+        return self.set_response_body(response, data)
