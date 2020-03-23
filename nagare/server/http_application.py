@@ -9,6 +9,11 @@
 # this distribution.
 # --
 
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 import webob
 from webob import exc
 
@@ -18,15 +23,36 @@ from nagare.server import base_application
 class Request(webob.Request):
 
     @property
+    def host_port(self):
+        return self.headers.get('X-Forwarded-Port') or super(Request, self).host_port
+
+    @property
+    def host_url(self):
+        url = urlparse(super(Request, self).host_url)
+
+        scheme = self.headers.get('X-Forwarded-Proto', url.scheme)
+        hostname = self.headers.get('X-Forwarded-Host', url.hostname)
+        port = str(self.headers.get('X-Forwarded-Port', url.port))
+        if((scheme == 'http' and port == '80') or (scheme == 'https' and port == '443')):
+            port = None
+
+        return scheme + '://' + hostname + ((':' + port) if port else '')
+
+    @property
     def is_xhr(self):
         return super(Request, self).is_xhr or ('_a' in self.params)
 
-    def create_redirect_response(self, location=None, **params):
-        location = location or self.path_url.rstrip('/')
+    def create_redirect_url(self, location=None, **params):
+        redirect_url = location or self.path_url.rstrip('/')
         if params:
-            location += '?' + '&'.join('%s=%s' % param for param in params.items())
+            redirect_url += '?' + '&'.join('%s=%s' % param for param in params.items())
 
-        return (exc.HTTPServiceUnavailable if self.is_xhr else exc.HTTPSeeOther)(location=location)
+        return redirect_url
+
+    def create_redirect_response(self, location=None, **params):
+        redirect_url = self.create_redirect_url(location=location, **params)
+
+        return (exc.HTTPServiceUnavailable if self.is_xhr else exc.HTTPSeeOther)(location=redirect_url)
 
 
 class Response(webob.Response):
