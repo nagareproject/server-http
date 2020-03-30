@@ -43,7 +43,11 @@ class Request(webob.Request):
         return super(Request, self).is_xhr or ('_a' in self.params)
 
     def create_redirect_url(self, location=None, **params):
-        redirect_url = location or self.path_url.rstrip('/')
+        redirect_url = location or self.path_url
+
+        if not redirect_url.endswith('/'):
+            redirect_url += '/'
+
         if params:
             redirect_url += '?' + '&'.join('%s=%s' % param for param in params.items())
 
