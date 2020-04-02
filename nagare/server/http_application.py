@@ -32,11 +32,11 @@ class Request(webob.Request):
 
         scheme = self.headers.get('X-Forwarded-Proto', url.scheme)
         hostname = self.headers.get('X-Forwarded-Host', url.hostname)
-        port = str(self.headers.get('X-Forwarded-Port', url.port))
-        if((scheme == 'http' and port == '80') or (scheme == 'https' and port == '443')):
+        port = self.headers.get('X-Forwarded-Port', url.port)
+        if((scheme == 'http' and port == 80) or (scheme == 'https' and port == 443)):
             port = None
 
-        return scheme + '://' + hostname + ((':' + port) if port else '')
+        return scheme + '://' + hostname + ((':' + str(port)) if port else '')
 
     @property
     def is_xhr(self):
