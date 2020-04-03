@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2019 Net-ng.
+# Copyright (c) 2008-2020 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -48,7 +48,12 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
     )
 
     def __init__(self, name, dist, http_exception_handler, services_service, **config):
-        services_service(super(ExceptionsService, self).__init__, name, dist, **config)
+        services_service(
+            super(ExceptionsService, self).__init__,
+            name, dist,
+            http_exception_handler=http_exception_handler,
+            **config
+        )
         self.http_exception_handler = reference.load_object(http_exception_handler)[0]
 
     @staticmethod

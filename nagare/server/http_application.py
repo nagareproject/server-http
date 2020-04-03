@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2019 Net-ng.
+# Copyright (c) 2008-2020 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -72,7 +72,7 @@ class App(base_application.App):
     )
 
     def __init__(self, name, dist, url, services_service, **config):
-        services_service(super(App, self).__init__, name, dist, **config)
+        services_service(super(App, self).__init__, name, dist, url=url, **config)
         self.url = (url if url is not None else name).rstrip('/')
 
     @staticmethod
@@ -117,7 +117,12 @@ class RESTApp(App):
     )
 
     def __init__(self, name, dist, default_content_type, router_service, services_service, **config):
-        services_service(super(RESTApp, self).__init__, name, dist, **config)
+        services_service(
+            super(RESTApp, self).__init__,
+            name, dist,
+            default_content_type=default_content_type,
+            **config
+        )
 
         self.default_content_type = default_content_type
         self.router = router_service
