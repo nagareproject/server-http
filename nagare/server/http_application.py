@@ -31,7 +31,7 @@ class Request(webob.Request):
         url = urlparse(super(Request, self).host_url)
 
         scheme = self.headers.get('X-Forwarded-Proto', url.scheme)
-        hostname = self.headers.get('X-Forwarded-Host', url.hostname)
+        hostname = self.headers.get('Host') or self.headers.get('X-Forwarded-Host') or url.hostname
         port = self.headers.get('X-Forwarded-Port', url.port)
         if((scheme == 'http' and port == 80) or (scheme == 'https' and port == 443)):
             port = None
@@ -73,7 +73,10 @@ class App(base_application.App):
 
     def __init__(self, name, dist, url, services_service, **config):
         services_service(super(App, self).__init__, name, dist, url=url, **config)
-        self.url = (url if url is not None else name).rstrip('/')
+
+        url = url.strip('/') if url is not None else name
+        self.url = url and ('/' + url)
+        self.service_url = self.url + '/service'
 
     @staticmethod
     def create_request(environ, *args, **kw):
@@ -101,7 +104,7 @@ class App(base_application.App):
 
     def handle_start(self, app, statics_service, services_service):
         services_service(super(App, self).handle_start, app)
-        statics_service.register(self.url)
+        statics_service.register_app(self.url)
 
     def handle_request(self, chain, request, response, **params):
         return response
