@@ -31,8 +31,10 @@ class Request(webob.Request):
         url = urlparse(super(Request, self).host_url)
 
         scheme = self.headers.get('X-Forwarded-Proto', url.scheme)
-        hostname = self.headers.get('Host') or self.headers.get('X-Forwarded-Host') or url.hostname
-        port = self.headers.get('X-Forwarded-Port', url.port)
+        host = self.headers.get('X-Forwarded-Host') or self.headers.get('Host') or url.hostname
+        hostname, _, port = host.partition(':')
+        if not port:
+            port = self.headers.get('X-Forwarded-Port') or url.port
         if((scheme == 'http' and port == 80) or (scheme == 'https' and port == 443)):
             port = None
 
