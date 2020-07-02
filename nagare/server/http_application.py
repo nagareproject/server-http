@@ -70,13 +70,13 @@ class App(base_application.App):
 
     CONFIG_SPEC = dict(
         base_application.App.CONFIG_SPEC,
-        url='string(default=None)',
+        url='string(default="")',
     )
 
     def __init__(self, name, dist, url, services_service, **config):
         services_service(super(App, self).__init__, name, dist, url=url, **config)
 
-        url = url.strip('/') if url is not None else name
+        url = url.strip('/')
         self.url = url and ('/' + url)
         self.service_url = self.url + '/service'
 
