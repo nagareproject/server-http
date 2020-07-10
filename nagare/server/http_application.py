@@ -55,10 +55,14 @@ class Request(webob.Request):
 
         return redirect_url
 
-    def create_redirect_response(self, location=None, **params):
+    def create_redirect_response(self, location=None, response=None, **params):
         redirect_url = self.create_redirect_url(location=location, **params)
 
-        return (exc.HTTPServiceUnavailable if self.is_xhr else exc.HTTPSeeOther)(location=redirect_url)
+        redirect = (exc.HTTPServiceUnavailable if self.is_xhr else exc.HTTPSeeOther)(location=redirect_url)
+        if response is not None:
+            response.merge_cookies(redirect)
+
+        return redirect
 
 
 class Response(webob.Response):
