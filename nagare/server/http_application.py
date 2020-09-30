@@ -24,18 +24,34 @@ class Request(webob.Request):
 
     @property
     def host_port(self):
-        return self.headers.get('X-Forwarded-Port') or super(Request, self).host_port
+        ports = self.headers.get('X-Forwarded-Port')
+        if ports is None:
+            port = super(Request, self).host_port
+        else:
+            port = ports.split(',', 1)[0].strip()
+            port = int(port) if port.isdigit() else None
+
+        return port
 
     @property
     def host_url(self):
         url = urlparse(super(Request, self).host_url)
 
-        scheme = self.headers.get('X-Forwarded-Proto', url.scheme)
-        host = self.headers.get('X-Forwarded-Host') or self.headers.get('Host') or url.hostname
+        schemes = self.headers.get('X-Forwarded-Proto', url.scheme)
+        scheme = schemes.split(',', 1)[0].strip()
+
+        hosts = self.headers.get('X-Forwarded-Host') or self.headers.get('Host') or url.hostname
+        host = hosts.split(',', 1)[0].strip()
+
         hostname, _, port = host.partition(':')
         if not port:
-            port = self.headers.get('X-Forwarded-Port') or url.port
-        if((scheme == 'http' and port == 80) or (scheme == 'https' and port == 443)):
+            ports = self.headers.get('X-Forwarded-Port')
+            if ports is None:
+                port = url.port
+            else:
+                port = ports.split(',', 1)[0].strip()
+                port = int(port) if port.isdigit() else None
+        if (scheme == 'http' and port == 80) or (scheme == 'https' and port == 443):
             port = None
 
         return scheme + '://' + hostname + ((':' + str(port)) if port else '')
