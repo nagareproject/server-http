@@ -23,34 +23,34 @@ from nagare.server import base_application
 class Request(webob.Request):
 
     @property
-    def host_port(self):
-        ports = self.headers.get('X-Forwarded-Port')
-        if ports is None:
-            port = super(Request, self).host_port
-        else:
-            port = ports.split(',', 1)[0].strip()
-            port = int(port) if port.isdigit() else None
-
-        return port
-
-    @property
-    def host_url(self):
+    def scheme_hostname_port(self):
         url = urlparse(super(Request, self).host_url)
 
         schemes = self.headers.get('X-Forwarded-Proto', url.scheme)
         scheme = schemes.split(',', 1)[0].strip()
 
-        hosts = self.headers.get('X-Forwarded-Host') or self.headers.get('Host') or url.hostname
-        host = hosts.split(',', 1)[0].strip()
+        hosts = self.headers.get('X-Forwarded-Host') or self.headers.get('Host')
+        if hosts:
+            host = hosts.split(',', 1)[0].strip()
+            host_name, _, host_port = host.partition(':')
+            host_port = int(host_port) if host_port.isdigit() else None
+        else:
+            host_name = url.hostname
+            host_port = url.port
 
-        hostname, _, port = host.partition(':')
-        if not port:
-            ports = self.headers.get('X-Forwarded-Port')
-            if ports is None:
-                port = url.port
-            else:
-                port = ports.split(',', 1)[0].strip()
-                port = int(port) if port.isdigit() else None
+        ports = self.headers.get('X-Forwarded-Port', '')
+        port = ports.split(',', 1)[0].strip()
+        port = int(port) if port.isdigit() else None
+
+        return scheme, host_name, port or host_port
+
+    @property
+    def host_port(self):
+        return self.scheme_hostname_port[2] or ''
+
+    @property
+    def host_url(self):
+        scheme, hostname, port = self.scheme_hostname_port
         if (scheme == 'http' and port == 80) or (scheme == 'https' and port == 443):
             port = None
 
