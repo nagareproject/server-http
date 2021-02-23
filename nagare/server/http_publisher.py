@@ -1,5 +1,5 @@
 # --
-# Copyright (c) 2008-2020 Net-ng.
+# Copyright (c) 2008-2021 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -47,7 +47,7 @@ class Publisher(publisher.Publisher):
         return super(Publisher, self).generate_banner() + ' on ' + url
 
     def create_websocket(self, environ):
-        raise NotImplementedError()
+        return None
 
     def start_handle_request(self, app, environ, start_response):
         websocket = self.create_websocket(environ)

@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2020 Net-ng.
+# Copyright (c) 2008-2021 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -71,10 +71,11 @@ class Request(webob.Request):
 
         return redirect_url
 
-    def create_redirect_response(self, location=None, response=None, **params):
+    def create_redirect_response(self, location=None, response=None, commit_transaction=False, **params):
         redirect_url = self.create_redirect_url(location=location, **params)
 
         redirect = (exc.HTTPServiceUnavailable if self.is_xhr else exc.HTTPSeeOther)(location=redirect_url)
+        redirect.commit_transaction = commit_transaction
         if response is not None:
             response.merge_cookies(redirect)
 
