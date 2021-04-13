@@ -82,7 +82,7 @@ class Publisher(publisher.Publisher):
                 self.logger.critical('Unhandled exception', exc_info=True)
                 response = exc.HTTPInternalServerError()
 
-        return response(environ, start_response)
+        return [] if response is None else response(environ, start_response)
 
     def _serve(self, app, **params):
         self.launch_browser()
