@@ -20,7 +20,7 @@ from nagare.server import publisher
 class Publisher(publisher.Publisher):
     CONFIG_SPEC = dict(
         publisher.Publisher.CONFIG_SPEC,
-        _app_url='string(default=$app_url)',
+        _app_url='string(default="$app_url")',
         open_on_start='boolean(default=False, help="open a browser tab on startup")'
     )
     websocket_app = WebSocketWSGIApplication
