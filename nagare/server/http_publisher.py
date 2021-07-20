@@ -49,7 +49,7 @@ class Publisher(publisher.Publisher):
     def create_websocket(self, environ):
         return None
 
-    def start_handle_request(self, app, environ, start_response):
+    def start_handle_request(self, app, environ, start_response, services_service):
         websocket = self.create_websocket(environ)
         if websocket is not None:
             environ.pop('set_websocket')(websocket, environ)
@@ -66,7 +66,8 @@ class Publisher(publisher.Publisher):
                     def start_response(status, headers, sr=start_response):
                         sr(status, headers + [('Content-length', '0')])
 
-                response = super(Publisher, self).start_handle_request(
+                response = services_service(
+                    super(Publisher, self).start_handle_request,
                     app,
                     request=request,
                     start_response=start_response,
