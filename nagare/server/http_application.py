@@ -22,6 +22,10 @@ from nagare.server import base_application
 
 class Request(webob.Request):
 
+    def __init__(self, *args, **kw):
+        super(Request, self).__init__(*args, **kw)
+        self.is_authenticated = False
+
     @property
     def scheme_hostname_port(self):
         url = urlparse(super(Request, self).host_url)
