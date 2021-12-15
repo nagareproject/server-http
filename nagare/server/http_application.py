@@ -10,9 +10,10 @@
 # --
 
 try:
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, urlencode
 except ImportError:
     from urlparse import urlparse
+    from urllib import urlencode
 
 import webob
 from webob import exc
@@ -64,14 +65,14 @@ class Request(webob.Request):
     def is_xhr(self):
         return super(Request, self).is_xhr or ('_a' in self.params)
 
-    def create_redirect_url(self, location=None, **params):
+    def create_redirect_url(self, location=None, add_slash=True, **params):
         redirect_url = location or self.path_url
 
-        if not redirect_url.endswith('/'):
+        if add_slash and not redirect_url.endswith('/'):
             redirect_url += '/'
 
         if params:
-            redirect_url += '?' + '&'.join('%s=%s' % param for param in params.items())
+            redirect_url += '?' + urlencode(params)
 
         return redirect_url
 
@@ -81,9 +82,10 @@ class Request(webob.Request):
             response=None,
             redirect_exc=exc.HTTPSeeOther,
             commit_transaction=False,
+            add_slash=True,
             **params
     ):
-        redirect_url = self.create_redirect_url(location=location, **params)
+        redirect_url = self.create_redirect_url(location, add_slash, **params)
         redirect = (exc.HTTPServiceUnavailable if self.is_xhr else redirect_exc)(location=redirect_url)
         redirect.commit_transaction = commit_transaction
         if response is not None:
