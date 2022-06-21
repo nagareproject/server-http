@@ -70,14 +70,13 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
     @staticmethod
     def default_http_exception_handler(http_exception, app, **context):
         if app.data_path:
-            filename = path.join(app.data_path, 'http_errors', filename)
-            if not path.isfile(filename):
-                filename = path.join(app.data_path, 'http_errors', 'default')
-                if not path.isfile(filename):
-                    filename = None
+            status = str(http_exception.status_code)
 
-            if filename:
-                with open(filename) as f:
-                    http_exception.text = f.read()
+            for filename in [status, status[:-1] + 'x', status[:-2] + 'xx', 'xxx', 'default']:
+                fullname = path.join(app.data_path, 'http_errors', filename)
+                if path.isfile(fullname):
+                    with open(fullname) as f:
+                        http_exception.text = f.read()
+                    break
 
         return http_exception
