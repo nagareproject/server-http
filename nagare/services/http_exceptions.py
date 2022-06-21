@@ -20,11 +20,11 @@ def default_exception_handler(exception, exceptions_service, services_service, *
     if isinstance(exception, exc.HTTPOk):
         return exception
 
-    if not isinstance(exception, exc.HTTPException):
+    if not isinstance(exception, exc.WSGIHTTPException):
         exceptions_service.log_exception()
         exception = exc.HTTPInternalServerError()
 
-    exception = services_service(exceptions_service.http_exception_handler, exception, **context)
+    exception = services_service(exceptions_service.handle_http_exception, exception, **context)
 
     if getattr(exception, 'commit_transaction', False):
         return exception
@@ -32,9 +32,9 @@ def default_exception_handler(exception, exceptions_service, services_service, *
         raise exception
 
 
-def default_http_exception_handler(http_exception, exceptions_service, app, **context):
+def default_http_exception_handler(http_exception, exceptions_service, **context):
     if http_exception.status_code // 100 in (4, 5):
-        http_exception = exceptions_service.handle_http_exception(http_exception, str(http_exception.status_code), app)
+        http_exception = exceptions_service.default_http_exception_handler(http_exception, **context)
 
     return http_exception
 
@@ -54,10 +54,21 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
             http_exception_handler=http_exception_handler,
             **config
         )
-        self.http_exception_handler = reference.load_object(http_exception_handler)[0]
+        self.http_exception_handlers = []
+        self.add_http_exception_handler(reference.load_object(http_exception_handler)[0])
+
+    def add_http_exception_handler(self, exception_handler):
+        if exception_handler not in self.http_exception_handlers:
+            self.http_exception_handlers.append(exception_handler)
+
+    def handle_http_exception(self, http_exception, services_service, **context):
+        for exception_handler in self.http_exception_handlers:
+            http_exception = services_service(exception_handler, http_exception, **context)
+
+        return http_exception
 
     @staticmethod
-    def handle_http_exception(http_exception, filename, app):
+    def default_http_exception_handler(http_exception, app, **context):
         if app.data_path:
             filename = path.join(app.data_path, 'http_errors', filename)
             if not path.isfile(filename):
