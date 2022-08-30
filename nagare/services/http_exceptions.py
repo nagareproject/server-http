@@ -24,7 +24,7 @@ def default_exception_handler(exception, exceptions_service, services_service, *
         exceptions_service.log_exception()
         exception = exc.HTTPInternalServerError()
 
-    exception = services_service(exceptions_service.handle_http_exception, exception, **context)
+    exception = services_service(exceptions_service.handle_exception, exception, **context)
 
     if getattr(exception, 'commit_transaction', False):
         return exception
@@ -54,18 +54,8 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
             http_exception_handler=http_exception_handler,
             **config
         )
-        self.http_exception_handlers = []
-        self.add_http_exception_handler(reference.load_object(http_exception_handler)[0])
 
-    def add_http_exception_handler(self, exception_handler):
-        if exception_handler not in self.http_exception_handlers:
-            self.http_exception_handlers.append(exception_handler)
-
-    def handle_http_exception(self, http_exception, services_service, **context):
-        for exception_handler in self.http_exception_handlers:
-            http_exception = services_service(exception_handler, http_exception, **context)
-
-        return http_exception
+        self.add_exception_handler(reference.load_object(http_exception_handler)[0])
 
     @staticmethod
     def default_http_exception_handler(http_exception, app, **context):
