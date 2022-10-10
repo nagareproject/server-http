@@ -16,7 +16,7 @@ except ImportError:
     from urllib import urlencode
 
 import webob
-from webob import exc
+from webob import exc, multidict
 
 from nagare.server import base_application
 
@@ -26,6 +26,27 @@ class Request(webob.Request):
     def __init__(self, *args, **kw):
         super(Request, self).__init__(*args, **kw)
         self.is_authenticated = False
+
+    @property
+    def POST(self):
+        if 'webob._parsed_post_vars' in self.environ:
+            vars = super().POST
+        else:
+            vars = multidict.MultiDict()
+
+            for names, values in super().POST.items():
+                if names.startswith('|_action'):
+                    for name in names.strip('|').split('|'):
+                        vars.add(name, values)
+                elif isinstance(values, str) and values.startswith('|_action'):
+                    for value in values.strip('|').split('|'):
+                        vars.add(names, value)
+                else:
+                    vars.add(names, values)
+
+            self.environ['webob._parsed_post_vars'] = (vars, self.body_file_raw)
+
+        return vars
 
     @property
     def scheme_hostname_port(self):
