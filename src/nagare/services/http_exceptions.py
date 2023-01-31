@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2022 Net-ng.
+# Copyright (c) 2008-2023 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -11,9 +11,9 @@
 
 from os import path
 
-from webob import exc
 from nagare.server import reference
 from nagare.services import base_exceptions_handler
+from webob import exc
 
 
 def default_exception_handler(exception, exceptions_service, services_service, **context):
@@ -44,15 +44,12 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
     CONFIG_SPEC = dict(
         base_exceptions_handler.ExceptionsService.CONFIG_SPEC,
         exception_handler='string(default="nagare.services.http_exceptions:default_exception_handler")',
-        http_exception_handler='string(default="nagare.services.http_exceptions:default_http_exception_handler")'
+        http_exception_handler='string(default="nagare.services.http_exceptions:default_http_exception_handler")',
     )
 
     def __init__(self, name, dist, http_exception_handler, services_service, **config):
         services_service(
-            super(ExceptionsService, self).__init__,
-            name, dist,
-            http_exception_handler=http_exception_handler,
-            **config
+            super(ExceptionsService, self).__init__, name, dist, http_exception_handler=http_exception_handler, **config
         )
 
         self.add_exception_handler(reference.load_object(http_exception_handler)[0])

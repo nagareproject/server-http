@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2022 Net-ng.
+# Copyright (c) 2008-2023 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -10,19 +10,18 @@
 # --
 
 try:
-    from urllib.parse import urlparse, urlencode
+    from urllib.parse import urlencode, urlparse
 except ImportError:
-    from urlparse import urlparse
     from urllib import urlencode
 
+    from urlparse import urlparse
+
+from nagare.server import base_application
 import webob
 from webob import exc, multidict
 
-from nagare.server import base_application
-
 
 class Request(webob.Request):
-
     def __init__(self, *args, **kw):
         super(Request, self).__init__(*args, **kw)
         self.is_authenticated = False
@@ -98,13 +97,13 @@ class Request(webob.Request):
         return redirect_url
 
     def create_redirect_response(
-            self,
-            location=None,
-            response=None,
-            redirect_exc=exc.HTTPSeeOther,
-            commit_transaction=False,
-            add_slash=True,
-            **params
+        self,
+        location=None,
+        response=None,
+        redirect_exc=exc.HTTPSeeOther,
+        commit_transaction=False,
+        add_slash=True,
+        **params,
     ):
         redirect_url = self.create_redirect_url(location, add_slash, **params)
         redirect = (exc.HTTPServiceUnavailable if self.is_xhr else redirect_exc)(location=redirect_url)
@@ -120,12 +119,9 @@ class Response(webob.Response):
 
 
 class App(base_application.App):
-    """Application to handle a HTTP request"""
+    """Application to handle a HTTP request."""
 
-    CONFIG_SPEC = dict(
-        base_application.App.CONFIG_SPEC,
-        url='string(default="")',
-    )
+    CONFIG_SPEC = dict(base_application.App.CONFIG_SPEC, url='string(default="")')
 
     def __init__(self, name, dist, url, services_service, **config):
         services_service(super(App, self).__init__, name, dist, url=url, **config)
@@ -136,7 +132,7 @@ class App(base_application.App):
 
     @staticmethod
     def create_request(environ, *args, **kw):
-        """Parse the REST environment received
+        """Parse the REST environment received.
 
         In:
           - ``environ`` -- the WSGI environment
@@ -148,7 +144,7 @@ class App(base_application.App):
 
     @staticmethod
     def create_response(request, *args, **kw):
-        """Return a response to the client
+        """Return a response to the client.
 
         In:
           - ``request`` -- the ``WebOb`` Request object
@@ -165,23 +161,16 @@ class App(base_application.App):
     def handle_request(self, chain, request, response, **params):
         return response
 
+
 # ---------------------------------------------------------------------------
 
 
 class RESTApp(App):
 
-    CONFIG_SPEC = dict(
-        App.CONFIG_SPEC,
-        default_content_type='string(default="application/json")'
-    )
+    CONFIG_SPEC = dict(App.CONFIG_SPEC, default_content_type='string(default="application/json")')
 
     def __init__(self, name, dist, default_content_type, router_service, services_service, **config):
-        services_service(
-            super(RESTApp, self).__init__,
-            name, dist,
-            default_content_type=default_content_type,
-            **config
-        )
+        services_service(super(RESTApp, self).__init__, name, dist, default_content_type=default_content_type, **config)
 
         self.default_content_type = default_content_type
         self.router = router_service

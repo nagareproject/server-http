@@ -1,5 +1,5 @@
 # --
-# Copyright (c) 2008-2022 Net-ng.
+# Copyright (c) 2008-2023 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -10,18 +10,17 @@
 import os
 import webbrowser
 
-from webob import exc
-from ws4py.websocket import WebSocket
-from ws4py.server.wsgiutils import WebSocketWSGIApplication
-
 from nagare.server import publisher
+from webob import exc
+from ws4py.server.wsgiutils import WebSocketWSGIApplication
+from ws4py.websocket import WebSocket
 
 
 class Publisher(publisher.Publisher):
     CONFIG_SPEC = dict(
         publisher.Publisher.CONFIG_SPEC,
         _app_url='string(default="$app_url")',
-        open_on_start='boolean(default=False, help="open a browser tab on startup")'
+        open_on_start='boolean(default=False, help="open a browser tab on startup")',
     )
     websocket_app = WebSocketWSGIApplication
     websocket_handler = WebSocket
@@ -63,6 +62,7 @@ class Publisher(publisher.Publisher):
         else:
             try:
                 if websocket is not None:
+
                     def start_response(status, headers, sr=start_response):
                         sr(status, headers + [('Content-length', '0')])
 
@@ -72,7 +72,7 @@ class Publisher(publisher.Publisher):
                     request=request,
                     start_response=start_response,
                     response=app.create_response(request),
-                    websocket=websocket
+                    websocket=websocket,
                 )
 
                 if websocket is not None:

@@ -1,0 +1,2 @@
+[nagare.services]
+exceptions = nagare.services.http_exceptions:ExceptionsService
