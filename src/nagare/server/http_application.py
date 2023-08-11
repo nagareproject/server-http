@@ -166,7 +166,6 @@ class App(base_application.App):
 
 
 class RESTApp(App):
-
     CONFIG_SPEC = dict(App.CONFIG_SPEC, default_content_type='string(default="application/json")')
 
     def __init__(self, name, dist, default_content_type, router_service, services_service, **config):
