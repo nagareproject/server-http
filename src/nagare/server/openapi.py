@@ -21,6 +21,7 @@ CONFIG_SPEC = {
     'title': 'string(default="API documentation")',
     'url': 'string(default=None)',
     'directory': 'string(default="$static/openapi")',
+    'default_document': 'string(default="")',
     'template': 'string(default="redoc")',
     # Redoc
     'disable_search': 'boolean(default=None)',
@@ -70,7 +71,7 @@ CONFIG_SPEC = {
     'persist_authorization': 'boolean(default=None)',
 }
 
-REDOC_TEMPLATE = '''<!doctype html>
+REDOC_TEMPLATE = """<!doctype html>
 <html>
     <head>
         <title>{title}</title>
@@ -85,9 +86,9 @@ REDOC_TEMPLATE = '''<!doctype html>
         <script>Redoc.init("{yaml_url}", {config});</script>
     </body>
 </html>
-'''
+"""
 
-SWAGGERUI_TEMPLATE = '''<!doctype html>
+SWAGGERUI_TEMPLATE = """<!doctype html>
 <html>
     <head>
         <title>{title}</title>
@@ -116,18 +117,22 @@ SWAGGERUI_TEMPLATE = '''<!doctype html>
         </script>
     </body>
 </html>
-'''
+"""
 
 
 class OpenAPIDirHandler(statics.DirHandler):
-    def __init__(self, title, directory, template, config):
+    def __init__(self, title, directory, default_document, template, config):
         super(OpenAPIDirHandler, self).__init__(directory)
 
         self.title = title
+        self.default_document = default_document
         self.template = template
         self.config = {re.sub('_(.)', lambda m: m.group(1).upper(), k): v for k, v in config.items() if v is not None}
 
     def generate_file_response(self, request, response, filename):
+        if filename == self.dirname:
+            filename = os.path.join(self.dirname, self.default_document)
+
         if not os.path.isfile(filename + '.yaml'):
             return super(OpenAPIDirHandler, self).generate_file_response(request, response, filename)
 
@@ -143,13 +148,13 @@ class OpenAPIDirHandler(statics.DirHandler):
         return response
 
 
-def create_handler(title, directory, template, url=None, **config):
+def create_handler(title, directory, default_document='', template='redoc', url=None, **config):
     if template == 'redoc':
         template = 'nagare.server.openapi:REDOC_TEMPLATE'
     if template == 'swagger-ui':
         template = 'nagare.server.openapi:SWAGGERUI_TEMPLATE'
 
-    return OpenAPIDirHandler(title, directory, reference.load_object(template)[0], config)
+    return OpenAPIDirHandler(title, directory, default_document, reference.load_object(template)[0], config)
 
 
 def register_handler(url, statics_service, **config):
