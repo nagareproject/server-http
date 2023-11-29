@@ -130,8 +130,10 @@ class OpenAPIDirHandler(statics.DirHandler):
         self.config = {re.sub('_(.)', lambda m: m.group(1).upper(), k): v for k, v in config.items() if v is not None}
 
     def generate_file_response(self, request, response, filename):
+        url = request.path_url
         if filename == self.dirname:
             filename = os.path.join(self.dirname, self.default_document)
+            url = url.rstrip('/') + '/' + self.default_document
 
         if not os.path.isfile(filename + '.yaml'):
             return super(OpenAPIDirHandler, self).generate_file_response(request, response, filename)
@@ -140,7 +142,7 @@ class OpenAPIDirHandler(statics.DirHandler):
             content_type='text/html',
             text=self.template.format(
                 title=self.title,
-                yaml_url=request.path_url + '.yaml' + (('?' + request.query_string) if request.query_string else ''),
+                yaml_url=url + '.yaml' + (('?' + request.query_string) if request.query_string else ''),
                 config=json.dumps(self.config),
             ),
         )
