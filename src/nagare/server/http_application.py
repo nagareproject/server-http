@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2023 Net-ng.
+# Copyright (c) 2008-2024 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -10,15 +10,16 @@
 # --
 
 try:
-    from urllib.parse import urlencode, urlparse
+    from urllib.parse import urlparse, urlencode
 except ImportError:
     from urllib import urlencode
 
     from urlparse import urlparse
 
-from nagare.server import base_application
 import webob
 from webob import exc, multidict
+
+from nagare.server import base_application
 
 
 class Request(webob.Request):

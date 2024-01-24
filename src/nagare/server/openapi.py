@@ -1,7 +1,7 @@
 # Encoding: utf-8
 
 # --
-# Copyright (c) 2008-2023 Net-ng.
+# Copyright (c) 2008-2024 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -9,13 +9,14 @@
 # this distribution.
 # --
 
-import json
 import os
 import re
+import json
+
+from webob.exc import HTTPOk
 
 from nagare.server import reference
 from nagare.services import statics
-from webob.exc import HTTPOk
 
 CONFIG_SPEC = {
     'title': 'string(default="API documentation")',
