@@ -13,50 +13,37 @@ from os import path
 
 from webob import exc
 
-from nagare.server import reference
 from nagare.services import base_exceptions_handler
 
 
-def default_exception_handler(exception, exceptions_service, services_service, **context):
-    if isinstance(exception, exc.HTTPOk):
-        return exception
-
+def exception_handler(exception, exceptions_service, **context):
     if not isinstance(exception, exc.WSGIHTTPException):
         exceptions_service.log_exception()
         exception = exc.HTTPInternalServerError()
 
-    exception = services_service(exceptions_service.handle_exception, exception, **context)
-
-    if getattr(exception, 'commit_transaction', False):
-        return exception
-    else:
-        raise exception
+    return exception
 
 
-def default_http_exception_handler(http_exception, exceptions_service, **context):
-    if http_exception.status_code // 100 in (4, 5):
-        http_exception = exceptions_service.default_http_exception_handler(http_exception, **context)
-
-    return http_exception
+def http_exception_handler(http_exception, exceptions_service, **context):
+    return (
+        exceptions_service.http_exception_handler(http_exception, **context)
+        if http_exception.status_code // 100 in (4, 5)
+        else http_exception
+    )
 
 
 class ExceptionsService(base_exceptions_handler.ExceptionsService):
     LOAD_PRIORITY = base_exceptions_handler.ExceptionsService.LOAD_PRIORITY + 2
     CONFIG_SPEC = dict(
         base_exceptions_handler.ExceptionsService.CONFIG_SPEC,
-        exception_handler='string(default="nagare.services.http_exceptions:default_exception_handler")',
-        http_exception_handler='string(default="nagare.services.http_exceptions:default_http_exception_handler")',
+        exception_handlers="""string_list(default=list(
+            'nagare.services.http_exceptions:exception_handler',
+            'nagare.services.http_exceptions:http_exception_handler'
+        ))""",
     )
 
-    def __init__(self, name, dist, http_exception_handler, services_service, **config):
-        services_service(
-            super(ExceptionsService, self).__init__, name, dist, http_exception_handler=http_exception_handler, **config
-        )
-
-        self.add_exception_handler(reference.load_object(http_exception_handler)[0])
-
     @staticmethod
-    def default_http_exception_handler(http_exception, app, **context):
+    def http_exception_handler(http_exception, app, **context):
         if app.data_path:
             status = str(http_exception.status_code)
 
