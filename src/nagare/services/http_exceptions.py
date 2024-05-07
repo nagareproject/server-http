@@ -40,6 +40,7 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
             'nagare.services.http_exceptions:exception_handler',
             'nagare.services.http_exceptions:http_exception_handler'
         ))""",
+        commit_exceptions="string_list(default=list('webob.exc:HTTPOk'))",
     )
 
     @staticmethod
