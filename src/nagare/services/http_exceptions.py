@@ -41,18 +41,25 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
             'nagare.services.http_exceptions:http_exception_handler'
         ))""",
         commit_exceptions="string_list(default=list('webob.exc:HTTPOk'))",
+        http_errors_path='string(default="$data/http_errors")',
     )
 
-    @staticmethod
-    def http_exception_handler(http_exception, app, **context):
-        if app.data_path:
-            status = str(http_exception.status_code)
+    def __init__(self, name, dist, services_service, http_errors_path, **config):
+        services_service(
+            super(ExceptionsService, self).__init__, name, dist, http_errors_path=http_errors_path, **config
+        )
+        self.http_errors_path = http_errors_path.replace('/', path.sep)
+        if not path.isdir(self.http_errors_path):
+            self.logger.error("'http_errors_path' value '{}' is not a directory".format(self.http_errors_path))
 
-            for filename in [status, status[:-1] + 'x', status[:-2] + 'xx', 'xxx', 'default']:
-                fullname = path.join(app.data_path, 'http_errors', filename)
-                if path.isfile(fullname):
-                    with open(fullname) as f:
-                        http_exception.text = f.read()
-                    break
+    def http_exception_handler(self, http_exception, app, **context):
+        status = str(http_exception.status_code)
+
+        for filename in [status, status[:-1] + 'x', status[:-2] + 'xx', 'xxx', 'default']:
+            fullname = path.join(self.http_errors_path, filename)
+            if path.isfile(fullname):
+                with open(fullname) as f:
+                    http_exception.text = f.read()
+                break
 
         return http_exception
