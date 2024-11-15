@@ -49,8 +49,6 @@ class ExceptionsService(base_exceptions_handler.ExceptionsService):
             super(ExceptionsService, self).__init__, name, dist, http_errors_path=http_errors_path, **config
         )
         self.http_errors_path = http_errors_path.replace('/', path.sep)
-        if not path.isdir(self.http_errors_path):
-            self.logger.error("'http_errors_path' value '{}' is not a directory".format(self.http_errors_path))
 
     def http_exception_handler(self, http_exception, app, **context):
         status = str(http_exception.status_code)
