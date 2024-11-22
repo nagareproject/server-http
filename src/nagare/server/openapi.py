@@ -55,6 +55,7 @@ CONFIG_SPEC = {
     'sort_enum_values_alphabetically': 'boolean(default=None)',
     'sort_props_alphabetically': 'boolean(default=None)',
     'untrusted_definition': 'boolean(default=None)',
+    'sort_tags_alphabetically': 'boolean(default=None)',
     # Swagger-ui
     'deep_linking': 'boolean(default=None)',
     'display_operation_id': 'boolean(default=None)',
@@ -70,6 +71,7 @@ CONFIG_SPEC = {
     'request_snippets_enabled': 'boolean(default=None)',
     'validator_url': 'string(default=None)',
     'persist_authorization': 'boolean(default=None)',
+    'tags_sorter': 'string(default=None, help="`alpha` or name of a js function")',
 }
 
 REDOC_TEMPLATE = """<!doctype html>
@@ -96,7 +98,7 @@ SWAGGERUI_TEMPLATE = """<!doctype html>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+        <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css">
         <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     </head>
 
