@@ -188,10 +188,11 @@ class RESTApp(App):
         if not response.content_type:
             response.content_type = self.default_content_type or 'application/octet-stream'
 
-        if response.content_type == 'application/json':
-            response.json_body = body or ''
-        else:
-            response.body = body or ''
+        if body is not None:
+            if response.content_type == 'application/json':
+                response.json_body = body
+            else:
+                response.body = body
 
         return response
 
