@@ -1,5 +1,5 @@
 # --
-# Copyright (c) 2008-2024 Net-ng.
+# Copyright (c) 2008-2025 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -27,7 +27,7 @@ class Publisher(publisher.Publisher):
     websocket_handler = WebSocket
 
     def __init__(self, name, dist, _app_url, open_on_start, **config):
-        super(Publisher, self).__init__(name, dist, open_on_start=open_on_start, **config)
+        super().__init__(name, dist, open_on_start=open_on_start, **config)
 
         self.url = _app_url
         self.open_on_start = open_on_start
@@ -44,7 +44,7 @@ class Publisher(publisher.Publisher):
     def generate_banner(self):
         _, _, _, endpoint = self.endpoint
         url = endpoint + self.url
-        return super(Publisher, self).generate_banner() + ' on ' + url
+        return super().generate_banner() + ' on ' + url
 
     def create_websocket(self, environ):
         return None
@@ -68,7 +68,7 @@ class Publisher(publisher.Publisher):
                         sr(status, headers + [('Content-length', '0')])
 
                 response = services_service(
-                    super(Publisher, self).start_handle_request,
+                    super().start_handle_request,
                     app,
                     request=request,
                     start_response=start_response,
@@ -89,4 +89,4 @@ class Publisher(publisher.Publisher):
     def _serve(self, app, **params):
         self.launch_browser()
 
-        super(Publisher, self)._serve(app, **params)
+        super()._serve(app, **params)

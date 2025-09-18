@@ -1,10 +1,10 @@
-# =-
-# (C)opyright Net-ng 2008-2024
+# --
+# (C)opyright Net-ng 2008-2025
 #
 # This is Net-ng proprietary source code
 # Any reproduction modification or use without prior written
 # approval from Net-ng is strictly forbidden.
-# =-
+# --
 
 [build-system]
 requires = ['setuptools', 'wheel', 'setuptools_scm']

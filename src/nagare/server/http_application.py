@@ -1,7 +1,5 @@
-# Encoding: utf-8
-
 # --
-# Copyright (c) 2008-2024 Net-ng.
+# Copyright (c) 2008-2025 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -17,40 +15,19 @@ except ImportError:
     from urlparse import urlparse
 
 import webob
-from webob import exc, multidict
+from webob import exc
 
 from nagare.server import base_application
 
 
 class Request(webob.Request):
     def __init__(self, *args, **kw):
-        super(Request, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.is_authenticated = False
 
     @property
-    def POST(self):
-        if 'webob._parsed_post_vars' in self.environ:
-            vars = super().POST
-        else:
-            vars = multidict.MultiDict()
-
-            for names, values in super().POST.items():
-                if names.startswith('|_action'):
-                    for name in names.strip('|').split('|'):
-                        vars.add(name, values)
-                elif isinstance(values, str) and values.startswith('|_action'):
-                    for value in values.strip('|').split('|'):
-                        vars.add(names, value)
-                else:
-                    vars.add(names, values)
-
-            self.environ['webob._parsed_post_vars'] = (vars, self.body_file_raw)
-
-        return vars
-
-    @property
     def scheme_hostname_port(self):
-        url = urlparse(super(Request, self).host_url)
+        url = urlparse(super().host_url)
 
         schemes = self.headers.get('X-Forwarded-Proto', url.scheme)
         scheme = schemes.split(',', 1)[0].strip()
@@ -84,7 +61,7 @@ class Request(webob.Request):
 
     @property
     def is_xhr(self):
-        return super(Request, self).is_xhr or ('_a' in self.params)
+        return super().is_xhr or ('_a' in self.params)
 
     def create_redirect_url(self, location=None, add_slash=True, **params):
         redirect_url = location or self.path_url
@@ -125,7 +102,7 @@ class App(base_application.App):
     CONFIG_SPEC = dict(base_application.App.CONFIG_SPEC, url='string(default="")')
 
     def __init__(self, name, dist, url, services_service, **config):
-        services_service(super(App, self).__init__, name, dist, url=url, **config)
+        services_service(super().__init__, name, dist, url=url, **config)
 
         url = url.strip('/')
         self.url = url and ('/' + url)
@@ -156,7 +133,7 @@ class App(base_application.App):
         return Response(*args, **kw)
 
     def handle_start(self, app, statics_service, services_service):
-        services_service(super(App, self).handle_start, app)
+        services_service(super().handle_start, app)
         statics_service.register_app(self.url)
 
     def handle_request(self, chain, request, response, **params):
@@ -170,7 +147,7 @@ class RESTApp(App):
     CONFIG_SPEC = dict(App.CONFIG_SPEC, default_content_type='string(default="application/json")')
 
     def __init__(self, name, dist, default_content_type, router_service, services_service, **config):
-        services_service(super(RESTApp, self).__init__, name, dist, default_content_type=default_content_type, **config)
+        services_service(super().__init__, name, dist, default_content_type=default_content_type, **config)
 
         self.default_content_type = default_content_type
         self.router = router_service

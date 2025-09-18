@@ -1,7 +1,5 @@
-# Encoding: utf-8
-
 # --
-# Copyright (c) 2008-2024 Net-ng.
+# Copyright (c) 2008-2025 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -125,7 +123,7 @@ SWAGGERUI_TEMPLATE = """<!doctype html>
 
 class OpenAPIDirHandler(statics.DirHandler):
     def __init__(self, title, directory, default_document, template, config):
-        super(OpenAPIDirHandler, self).__init__(directory)
+        super().__init__(directory)
 
         self.title = title
         self.default_document = default_document
@@ -139,7 +137,7 @@ class OpenAPIDirHandler(statics.DirHandler):
             url = url.rstrip('/') + '/' + self.default_document
 
         if not os.path.isfile(filename + '.yaml'):
-            return super(OpenAPIDirHandler, self).generate_file_response(request, response, filename)
+            return super().generate_file_response(request, response, filename)
 
         response = HTTPOk(
             content_type='text/html',
