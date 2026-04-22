@@ -11,20 +11,15 @@ import os
 import webbrowser
 
 from webob import exc
-from ws4py.websocket import WebSocket
-from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
-from nagare.server import publisher
+from nagare.publishers import publisher
 
 
 class Publisher(publisher.Publisher):
-    CONFIG_SPEC = dict(
-        publisher.Publisher.CONFIG_SPEC,
-        _app_url='string(default="$app_url")',
-        open_on_start='boolean(default=False, help="open a browser tab on startup")',
-    )
-    websocket_app = WebSocketWSGIApplication
-    websocket_handler = WebSocket
+    CONFIG_SPEC = publisher.Publisher.CONFIG_SPEC | {
+        '_app_url': 'string(default="$app_url")',
+        'open_on_start': 'boolean(default=False, help="open a browser tab on startup")',
+    }
 
     def __init__(self, name, dist, _app_url, open_on_start, **config):
         super().__init__(name, dist, open_on_start=open_on_start, **config)
@@ -46,14 +41,7 @@ class Publisher(publisher.Publisher):
         url = endpoint + self.url
         return super().generate_banner() + ' on ' + url
 
-    def create_websocket(self, environ):
-        return None
-
     def start_handle_request(self, app, environ, start_response, services_service):
-        websocket = self.create_websocket(environ)
-        if websocket is not None:
-            environ.pop('set_websocket')(websocket, environ)
-
         request = app.create_request(environ)
 
         try:
@@ -62,22 +50,13 @@ class Publisher(publisher.Publisher):
             response = exc.HTTPClientError()
         else:
             try:
-                if websocket is not None:
-
-                    def start_response(status, headers, sr=start_response):
-                        sr(status, headers + [('Content-length', '0')])
-
                 response = services_service(
                     super().start_handle_request,
                     app,
                     request=request,
                     start_response=start_response,
                     response=app.create_response(request),
-                    websocket=websocket,
                 )
-
-                if websocket is not None:
-                    response = self.websocket_app(['binary'], handler_cls=self.websocket_handler)
             except exc.HTTPException as e:
                 response = e
             except Exception:
