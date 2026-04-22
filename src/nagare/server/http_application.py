@@ -7,17 +7,53 @@
 # this distribution.
 # --
 
-try:
-    from urllib.parse import urlparse, urlencode
-except ImportError:
-    from urllib import urlencode
-
-    from urlparse import urlparse
+from urllib.parse import urlsplit, urlencode, urlunsplit
 
 import webob
 from webob import exc
 
 from nagare.server import base_application
+
+
+def livereload(event, dirname, filename, reloader, url):
+    if filename.endswith(('.css', '.js', '.gif', '.png', '.jpeg', '.jpg')):
+        reloader.reload_asset(url + '/' + filename)
+
+    return None
+
+
+class Url:
+    def __init__(self, url):
+        self.url = url
+
+    @staticmethod
+    def is_absolute(scheme, path, fragment):
+        return path.startswith('/') or (scheme == 'data') or (not path and fragment)
+
+    @classmethod
+    def absolute_url(cls, url, base_url, always_relative=False, base='', **params):
+        """Convert a relative URL of a static content to an absolute one.
+
+        In:
+        - ``url`` -- url to convert
+        - ``base_url`` -- URL prefix
+
+        Return:
+        - an absolute URL
+        """
+        scheme, netloc, path, query, fragment = urlsplit(url)
+        default_scheme, default_netloc, path_prefix, _, _ = urlsplit(base_url or '')
+
+        if not scheme and (always_relative or not cls.is_absolute(scheme, path, fragment)):
+            path = path_prefix.rstrip('/') + '/' + path.lstrip('/')
+
+        if params:
+            query += ('&' if query and params else '') + urlencode(params)
+
+        return urlunsplit((scheme or default_scheme, netloc or default_netloc, path, query, fragment))
+
+    def absolute(self, base_url, always_relative=False, base='', **params):
+        return self.absolute_url(self.url, base_url, always_relative, base, **params)
 
 
 class Request(webob.Request):
@@ -27,7 +63,7 @@ class Request(webob.Request):
 
     @property
     def scheme_hostname_port(self):
-        url = urlparse(super().host_url)
+        url = urlsplit(super().host_url)
 
         schemes = self.headers.get('X-Forwarded-Proto', url.scheme)
         scheme = schemes.split(',', 1)[0].strip()
@@ -99,14 +135,38 @@ class Response(webob.Response):
 class App(base_application.App):
     """Application to handle a HTTP request."""
 
-    CONFIG_SPEC = dict(base_application.App.CONFIG_SPEC, url='string(default="")')
+    CONFIG_SPEC = base_application.App.CONFIG_SPEC | {
+        'url': 'string(default="")',
+        'static_url': 'string(default="/static$app_url")',
+        'static': 'string(default="$_static_path")',
+        'gzip_static': 'boolean(default=True)',
+    }
 
-    def __init__(self, name, dist, url, services_service, **config):
-        services_service(super().__init__, name, dist, url=url, **config)
+    def __init__(self, name_, dist_, url, static_url, static, gzip_static, services_service, **config):
+        services_service(
+            super().__init__,
+            name_,
+            dist_,
+            url=url,
+            static_url=static_url,
+            static=static,
+            gzip_static=gzip_static,
+            **config,
+        )
 
         url = url.strip('/')
         self.url = url and ('/' + url)
+        self.static_url = static_url.rstrip('/')
+        self.static_path = static.rstrip('/')
+        self.gzip_static = gzip_static
         self.service_url = self.url + '/service'
+
+    @staticmethod
+    def absolute_url(url, base_url, always_relative=False, **params):
+        return Url.absolute_url(url, base_url, always_relative, **params)
+
+    def absolute_asset_url(self, url, always_relative=False, **params):
+        return self.absolute_url(url, self.static_url, always_relative, **params)
 
     @staticmethod
     def create_request(environ, *args, **kw):
@@ -132,8 +192,17 @@ class App(base_application.App):
         """
         return Response(*args, **kw)
 
-    def handle_start(self, app, statics_service, services_service):
+    def handle_start(self, app, statics_service, services_service, reloader_service=None):
         services_service(super().handle_start, app)
+
+        if self.static_url:
+            statics_service.register_dir(self.static_url, self.static_path, self.gzip_static)
+
+        if (reloader_service is not None) and (self.static_path):
+            reloader_service.watch_dir(
+                self.static_path, livereload, recursive=True, reloader=reloader_service, url=self.static_url
+            )
+
         statics_service.register_app(self.url)
 
     def handle_request(self, chain, request, response, **params):
@@ -144,10 +213,10 @@ class App(base_application.App):
 
 
 class RESTApp(App):
-    CONFIG_SPEC = dict(App.CONFIG_SPEC, default_content_type='string(default="application/json")')
+    CONFIG_SPEC = App.CONFIG_SPEC | {'default_content_type': 'string(default="application/json")'}
 
-    def __init__(self, name, dist, default_content_type, router_service, services_service, **config):
-        services_service(super().__init__, name, dist, default_content_type=default_content_type, **config)
+    def __init__(self, name_, dist_, default_content_type, router_service, services_service, **config):
+        services_service(super().__init__, name_, dist_, default_content_type=default_content_type, **config)
 
         self.default_content_type = default_content_type
         self.router = router_service
