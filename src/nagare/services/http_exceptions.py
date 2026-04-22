@@ -1,5 +1,5 @@
 # --
-# Copyright (c) 2008-2025 Net-ng.
+# Copyright (c) 2014-2026 Net-ng.
 # All rights reserved.
 #
 # This software is licensed under the BSD License, as described in
@@ -32,15 +32,14 @@ def http_exception_handler(http_exception, exceptions_service, **context):
 
 class ExceptionsService(base_exceptions_handler.ExceptionsService):
     LOAD_PRIORITY = base_exceptions_handler.ExceptionsService.LOAD_PRIORITY + 2
-    CONFIG_SPEC = dict(
-        base_exceptions_handler.ExceptionsService.CONFIG_SPEC,
-        exception_handlers="""string_list(default=list(
+    CONFIG_SPEC = base_exceptions_handler.ExceptionsService.CONFIG_SPEC | {
+        'exception_handlers': """string_list(default=list(
             'nagare.services.http_exceptions:exception_handler',
             'nagare.services.http_exceptions:http_exception_handler'
         ))""",
-        commit_exceptions="string_list(default=list('webob.exc:HTTPOk'))",
-        http_errors_path='string(default="$data/http_errors")',
-    )
+        'commit_exceptions': "string_list(default=list('webob.exc:HTTPOk'))",
+        'http_errors_path': 'string(default="$data/http_errors")',
+    }
 
     def __init__(self, name, dist, services_service, http_errors_path, **config):
         services_service(super().__init__, name, dist, http_errors_path=http_errors_path, **config)
