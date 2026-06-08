@@ -10,7 +10,8 @@
 # --
 
 tests:
+  image: ghcr.io/astral-sh/uv:trixie-slim
+
   script:
-    - pip3 install ruff
-    - ruff format --check src
-    - ruff check src
+    - uvx ruff format --check src
+    - uvx ruff check src

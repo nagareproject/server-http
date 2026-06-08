@@ -41,6 +41,10 @@ class Publisher(publisher.Publisher):
         url = endpoint + self.url
         return super().generate_banner() + ' on ' + url
 
+    @staticmethod
+    def generate_response(environ, start_response, response):
+        return [] if response is None else response(environ, start_response)
+
     def start_handle_request(self, app, environ, start_response, services_service):
         request = app.create_request(environ)
 
@@ -63,7 +67,7 @@ class Publisher(publisher.Publisher):
                 self.logger.critical('Unhandled exception', exc_info=True)
                 response = exc.HTTPInternalServerError()
 
-        return [] if response is None else response(environ, start_response)
+        return self.generate_response(environ, start_response, response)
 
     def _serve(self, app, **params):
         self.launch_browser()
