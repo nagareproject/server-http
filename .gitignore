@@ -19,5 +19,6 @@
 /build
 /dist
 htmlcov
-nbproject
+/public
+.ruff_cache
 /doc/_build

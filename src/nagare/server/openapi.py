@@ -23,37 +23,24 @@ CONFIG_SPEC = {
     'default_document': 'string(default="")',
     'template': 'string(default="redoc")',
     # Redoc
-    'disable_search': 'boolean(default=None)',
-    'min_character_length_to_init_search': 'integer(default=None)',
-    'expand_default_server_variables': 'boolean(default=None)',
-    'expand_responses': 'string(default=None)',
-    'expand_single_schema_fields': 'boolean(default=None)',
-    'hide_download_button': 'boolean(default=None)',
-    'hide_hostname': 'boolean(default=None)',
-    'hide_loading': 'boolean(default=None)',
-    'hide_request_payload_sample': 'boolean(default=None)',
-    'hide_schema_pattern': 'boolean(default=None)',
-    'hide_one_of_description': 'boolean(default=None)',
+    'disable_telemetry': 'boolean(default=True)',
+    'generated_samples_max_depth': 'integer(default=None)',
+    'hide_download_buttons': 'boolean(default=None)',
+    'hide_properties_prefix': 'boolean(default=None)',
     'hide_schema_titles': 'boolean(default=None)',
-    'hide_single_request_sample_tab': 'boolean(default=None)',
-    'show_object_schema_examples': 'boolean(default=None)',
-    'html_template': 'string(default=None)',
+    'json_samples_sxpandLevel': 'integer(default=None)',
+    'layout': 'option("three-panel", "stacked", default=None)',
     'max_displayed_enum_values': 'integer(default=None)',
-    'menu_toggle': 'boolean(default=None)',
-    'native_scrollbars': 'boolean(default=None)',
     'only_required_in_samples': 'boolean(default=None)',
-    'path_in_middle_panel': 'boolean(default=None)',
-    'payload_sample_idx': 'integer(default=None)',
-    'required_props_first': 'boolean(default=None)',
-    'scroll_y_offset': 'string(default=None)',
-    'show_webhook_verbs': 'boolean(default=None)',
+    'sanitize': 'boolean(default=None)',
+    'schema_definitions_tag_name': 'string(default=None)',
+    'schemas_expansion_level': 'integer(default=None)',
     'show_extensions': 'boolean(default=None)',
-    'hide_security_section': 'boolean(default=None)',
-    'simple_one_of_type_label': 'boolean(default=None)',
-    'sort_enum_values_alphabetically': 'boolean(default=None)',
-    'sort_props_alphabetically': 'boolean(default=None)',
-    'untrusted_definition': 'boolean(default=None)',
-    'sort_tags_alphabetically': 'boolean(default=None)',
+    'sort_required_props_first': 'boolean(default=None)',
+    'hide_loading': 'boolean(default=None)',
+    'hide_schema_pattern': 'boolean(default=None)',
+    'scroll_y_offset': 'integer(default=None)',
+    'theme': 'option("light", "dark", default="light")',
     # Swagger-ui
     'deep_linking': 'boolean(default=None)',
     'display_operation_id': 'boolean(default=None)',
@@ -73,18 +60,20 @@ CONFIG_SPEC = {
 }
 
 REDOC_TEMPLATE = """<!doctype html>
-<html>
+<html class="{theme}">
     <head>
         <title>{title}</title>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
     </head>
 
     <body style="margin: 0; padding: 0">
         <redoc/>
-        <script>Redoc.init("{yaml_url}", {config});</script>
+        <script type="module">
+            import {{ init }} from "https://cdn.redoc.ly/redoc/v3.x/bundles/redoc.standalone.js";
+
+            init("{yaml_url}", {config})
+        </script>
     </body>
 </html>
 """
@@ -122,12 +111,13 @@ SWAGGERUI_TEMPLATE = """<!doctype html>
 
 
 class OpenAPIDirHandler(statics.DirHandler):
-    def __init__(self, title, directory, default_document, template, config):
+    def __init__(self, title, directory, default_document, template, theme, config):
         super().__init__(directory)
 
         self.title = title
         self.default_document = default_document
         self.template = template
+        self.theme = theme
         self.config = {re.sub('_(.)', lambda m: m.group(1).upper(), k): v for k, v in config.items() if v is not None}
 
     def generate_file_response(self, request, response, filename):
@@ -144,6 +134,7 @@ class OpenAPIDirHandler(statics.DirHandler):
             text=self.template.format(
                 title=self.title,
                 yaml_url=url + '.yaml' + (('?' + request.query_string) if request.query_string else ''),
+                theme=self.theme,
                 config=json.dumps(self.config),
             ),
         )
@@ -151,13 +142,13 @@ class OpenAPIDirHandler(statics.DirHandler):
         return response
 
 
-def create_handler(title, directory, default_document='', template='redoc', url=None, **config):
+def create_handler(title, directory, default_document='', template='redoc', url=None, theme=None, **config):
     if template == 'redoc':
         template = 'nagare.server.openapi:REDOC_TEMPLATE'
     if template == 'swagger-ui':
         template = 'nagare.server.openapi:SWAGGERUI_TEMPLATE'
 
-    return OpenAPIDirHandler(title, directory, default_document, reference.load_object(template)[0], config)
+    return OpenAPIDirHandler(title, directory, default_document, reference.load_object(template)[0], theme, config)
 
 
 def register_handler(url, statics_service, **config):
